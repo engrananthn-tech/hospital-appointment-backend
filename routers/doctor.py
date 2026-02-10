@@ -87,6 +87,8 @@ def update_slot(slot: schemas.SlotsInput, db: Session = Depends(get_db), current
         if slot.start_time >= slot.end_time:
             raise HTTPException(status_code=422, detail="end_time must be after start_time")
         doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor profile not found")
         if not doctor.is_active:
              raise HTTPException(status_code=403, detail="Not authorized to update slot")
         start_dt = datetime.combine(slot.date, slot.start_time)
