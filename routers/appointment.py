@@ -60,7 +60,7 @@ def get_my_appointments(status: schemas.AppointmentFilter | None = Query(None), 
                 "date": date,
                 "start_time": start_time,
                 "end_time": end_time,
-                "doctor_name": doctor_name,
+                "patient_id": doctor_name,
                 "status": appt.status
             })
     else:
@@ -87,7 +87,7 @@ def get_my_appointments(status: schemas.AppointmentFilter | None = Query(None), 
     return response
 
 @router.patch("/{id}/cancel", response_model= schemas.AppointmentOutput)
-def cancel_appointment(db: Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
+def cancel_appointment(id: int = id, db: Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
     if current_user.role == "patient":
         patient = db.query(models.Patient).filter(models.Patient.user_id == current_user.user_id).first()
         if not patient.is_active:
@@ -107,22 +107,21 @@ def cancel_appointment(db: Session = Depends(get_db), current_user : dict = Depe
         raise HTTPException(status_code=409, detail="Appointment already cancelled")
     if appointment.status == "completed":
         raise HTTPException(status_code=409, detail="Invalid appointment state transition")
-    with db.begin():
-        if current_user.role == "patient":
-            cutoff = (datetime.combine(slot.date, slot.start_time) - timedelta(minutes=30))
-            if now > cutoff:
-                raise HTTPException(status_code=403, detail="Cancellation window has passed")
-            appointment.status = "cancelled"
-            new_audit = models.Appointment_audit(appointment_id = appointment.appointment_id, old_status = "booked", new_status = "cancelled", changed_by = "patient")
-            
-            slot.status = "available"
-        else:
-            appointment.status = "cancelled"
-            new_audit = models.Appointment_audit(appointment_id = appointment.appointment_id, old_status = "booked", new_status = "cancelled", changed_by = "patient")
-            now = datetime.now()
-            if (now.date() < slot.date) or (now.date() == slot.date and now.time() < slot.time()):
-                slot.status = "available" 
-        db.add(new_audit)
+    if current_user.role == "patient":
+        cutoff = (datetime.combine(slot.date, slot.start_time) - timedelta(minutes=30))
+        if now > cutoff:
+            raise HTTPException(status_code=403, detail="Cancellation window has passed")
+        appointment.status = "cancelled"
+        new_audit = models.Appointment_audit(appointment_id = appointment.appointment_id, old_status = "booked", new_status = "cancelled", changed_by = "patient")
+        
+        slot.status = "available"
+    else:
+        appointment.status = "cancelled"
+        new_audit = models.Appointment_audit(appointment_id = appointment.appointment_id, old_status = "booked", new_status = "cancelled", changed_by = "patient")
+        now = datetime.now()
+        if (now.date() < slot.date) or (now.date() == slot.date and now.time() < slot.time()):
+            slot.status = "available" 
+    db.add(new_audit)
     return query.first()
 
 @router.patch("/{id}/complete", response_model= schemas.AppointmentOutput)
