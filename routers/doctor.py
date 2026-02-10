@@ -28,7 +28,7 @@ def get_user(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.g
     if not current_doctor:
         raise HTTPException(status_code=404, detail="Doctor profile not found")
     if not current_doctor.is_active:
-        raise HTTPException(status_code=403, detail="Not authorized to get doctor information")
+        raise HTTPException(status_code=403, detail="Doctor profile is inactive")
     else:
         return current_doctor
     
