@@ -164,8 +164,14 @@ def delete_slot(id:int = id, db : Session = Depends(get_db), current_user : dict
 
 @router.get("/me/patients", response_model= List[schemas.PatientOutputDoc])
 def get_my_patients(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
+    if current_user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Not authorized to check the patients info")
     doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
-    patients = db.query(models.Patient, models.User.name).join(models.Appointment, models.Appointment.patient_id == models.Patient.patient_id).join(models.Slot, models.Slot.slot_id == models.Appointment.slot_id).join(models.User, models.User.user_id == models.Patient.user_id).filter(models.Slot.doctor_id == doctor.doctor_id).all()
+    if not doctor:
+         raise HTTPException(status_code=404, detail="Doctor not found")
+    if not doctor.is_active:
+         raise HTTPException(status_code=403, detail="Doctor profile is not active")
+    patients = db.query(models.Patient, models.User.user_name).join(models.Appointment, models.Appointment.patient_id == models.Patient.patient_id).join(models.Slot, models.Slot.slot_id == models.Appointment.slot_id).join(models.User, models.User.user_id == models.Patient.user_id).filter(models.Slot.doctor_id == doctor.doctor_id).all()
     response = []
     for patient, patient_name in patients:
         response.append(
