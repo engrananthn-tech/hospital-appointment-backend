@@ -34,10 +34,16 @@ def activate(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.
 
 
 
-@router.get("/doctors/me")
-def my_doctors(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
+@router.get("/doctors/me", response_model= List[schemas.DoctorOutput])
+def get_user(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.get_current_user)):
     current_patient = db.query(models.Patient).filter(models.Patient.user_id == current_user.user_id).first()
-    doctors = db.query(models.Doctor, models.User.user_name).join(models.Appointment, models.Appointment.patient_id == current_patient.patient_id).join(models.Slot, models.Slot.slot_id == models.Appointment.slot_id).join(models.Doctor, models.Doctor.doctor_id == models.Slot.doctor_id).join(models.User, models.User.user_id == models.Doctor.user_id).all()
+    doctor = db.query(models.Doctor).join(models.Appointment, models.Appointment.patient_id == current_patient.patient_id).join(models.Slot, models.Appointment.slot_id == models.Slot.slot_id).filter(models.Slot.doctor_id == models.Doctor.doctor_id).all()
+    if not current_patient:
+        raise HTTPException(status_code=404, detail="Doctor profile not found")
+    if not current_patient.is_active:
+        raise HTTPException(status_code=403, detail="Not authorized to get doctor information")
+    else:
+        return doctor
 
 
 @router.get("/me", response_model= schemas.PatientOwnerOutput)

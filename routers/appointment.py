@@ -44,7 +44,7 @@ def post_appointment(slot: schemas.AppointmentInput, db: Session = Depends(get_d
 def get_my_appointments(status: schemas.AppointmentFilter | None = Query(None), db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
     ##current_patient = db.query(models.Patient).filter(models.Patient.user_id == current_user.user_id).first()
     if current_user.role == "patient":
-        query = db.query(models.Appointment, models.Slot.date, models.Slot.start_time, models.Slot.end_time, models.User.user_name).join(models.Slot, models.Appointment.slot_id == models.Slot.slot_id).join(models.Patient, models.Appointment.patient_id == models.Patient.patient_id).join(models.User, models.User.user_id == models.Patient.user_id).filter(models.Patient.user_id == current_user.user_id).order_by(models.Slot.date, models.Slot.start_time)
+        query = db.query(models.Appointment, models.Slot.date, models.Slot.start_time, models.Slot.end_time, models.User.user_name).join(models.Slot, models.Appointment.slot_id == models.Slot.slot_id).join(models.Doctor, models.Slot.doctor_id == models.Doctor.doctor_id).join(models.User, models.User.user_id == models.Doctor.user_id).filter(models.Patient.user_id == current_user.user_id).order_by(models.Slot.date, models.Slot.start_time)
         if status == schemas.AppointmentFilter.completed:
             appointments = query.filter(models.Appointment.status == "completed").all()
         elif status == schemas.AppointmentFilter.cancelled:

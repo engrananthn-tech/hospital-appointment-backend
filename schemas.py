@@ -58,6 +58,13 @@ class DoctorOwnerOutput(BaseModel):
     created_at: datetime
     is_active: bool
 
+class DoctorOutput(BaseModel):
+    doctor_id: int
+    name: str
+    specialization: str
+    experience: int
+    created_at: datetime
+
 class UpdatePatient(BaseModel):
     gender: Literal['male','female']
     age: int
