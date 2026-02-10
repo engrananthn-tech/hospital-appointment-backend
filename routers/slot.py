@@ -13,7 +13,7 @@ router = APIRouter(prefix= '/slots')
 
 
 @router.get("/", response_model= List[schemas.SlotsOutput])
-def get_all_slots(db : Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
+def get_all_slots(name : str|None = None, db : Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
 
     if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Not authorized to check the available slots")
@@ -25,7 +25,7 @@ def get_all_slots(db : Session = Depends(get_db), current_user : dict = Depends(
     now = datetime.now()
     today = now.date()
     current_time = now.time()
-    results = (db.query(models.Slot, models.User.user_name).outerjoin(models.Appointment,models.Slot.slot_id == models.Appointment.slot_id).join(models.Doctor,models.Slot.doctor_id == models.Doctor.doctor_id).join(models.User,models.User.user_id == models.Doctor.user_id).filter(or_(models.Appointment.appointment_id.is_(None),models.Appointment.status == 'cancelled')).filter(or_(models.Slot.date > today,and_(models.Slot.date == today,models.Slot.start_time > current_time))).all())
+    results = (db.query(models.Slot, models.User.user_name).outerjoin(models.Appointment,models.Slot.slot_id == models.Appointment.slot_id).join(models.Doctor,models.Slot.doctor_id == models.Doctor.doctor_id).join(models.User,models.User.user_id == models.Doctor.user_id).filter(or_(models.Appointment.appointment_id.is_(None),models.Appointment.status == 'cancelled')).filter(or_(models.Slot.date > today,and_(models.Slot.date == today,models.Slot.start_time > current_time))).filter(models.User.user_name.contains(name)).order_by(models.Slot.date, models.Slot.start_time).all())
     response = []
     for slot_obj, doctor_name in results:
             response.append({
