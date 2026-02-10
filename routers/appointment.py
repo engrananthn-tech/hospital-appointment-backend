@@ -24,7 +24,7 @@ def update_appointment(slot: schemas.AppointmentInput, db: Session = Depends(get
     now = datetime.now()
     cutoff = now-timedelta(minutes = 30)
 
-    if (selected_slot.date or now.date()) | ((selected_slot.date == now.date()) and (selected_slot.start_time < (cutoff.time()))):
+    if (selected_slot.date or now.date()) or ((selected_slot.date == now.date()) and (selected_slot.start_time < (cutoff.time()))):
         raise HTTPException(status_code=409, detail="Booking window closed")
     
     patient_id = patient.patient_id
