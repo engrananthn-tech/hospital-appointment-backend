@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Form, File, UploadFile, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from database import get_db
 import models, schemas, utils, oauth2
 from datetime import datetime, timedelta
@@ -18,23 +18,25 @@ def post_appointment(slot: schemas.AppointmentInput, db: Session = Depends(get_d
         raise HTTPException(status_code=404, detail="Could'nt find patient")
     if not patient.is_active:
         raise HTTPException(status_code=403, detail="Not authorized to update appointments")
-    selected_slot = db.query(models.Slot).filter(models.Slot.slot_id == slot.slot_id).with_for_update().first()
-    if not selected_slot:
+    try:
+        selected_slot = db.query(models.Slot).filter(models.Slot.slot_id == slot.slot_id).with_for_update().one()
+    except NoResultFound:
         raise HTTPException(status_code=404, detail="Slot not found") 
     now = datetime.now()
     cutoff = now-timedelta(minutes = 30)
 
-    if (selected_slot.date or now.date()) or ((selected_slot.date == now.date()) and (selected_slot.start_time < (cutoff.time()))):
+    if (selected_slot.date < now.date()) or ((selected_slot.date == now.date()) and (selected_slot.start_time < (cutoff.time()))):
         raise HTTPException(status_code=409, detail="Booking window closed")
     
     patient_id = patient.patient_id
 
     if selected_slot.status == "booked":
         raise HTTPException(status_code=409, detail="Slot not available")      
-    with db.begin():
-        new = models.Appointment(patient_id = patient_id, slot_id = slot.slot_id, status = "booked")
-        selected_slot.status="booked"
-        db.add(new)
+
+    new = models.Appointment(patient_id = patient_id, slot_id = slot.slot_id, status = "booked")
+    selected_slot.status="booked"
+    db.add(new)
+    db.flush()
     db.refresh(new)
     return new
 
