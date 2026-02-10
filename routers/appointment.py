@@ -10,7 +10,7 @@ from typing import List
 router = APIRouter(prefix= "/appointments")
 
 @router.post("/", response_model= schemas.AppointmentOutput)
-def update_appointment(slot: schemas.AppointmentInput, db: Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
+def post_appointment(slot: schemas.AppointmentInput, db: Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
     if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Not authorized to update appointments")
     patient = db.query(models.Patient).filter(models.Patient.user_id == current_user.user_id).first()
