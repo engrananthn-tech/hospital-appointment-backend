@@ -110,6 +110,7 @@ class AppointmentOutputPat(BaseModel):
     date: date
     start_time: time
     end_time: time
+    patient_name: str
     doctor_name: str
     status: str
 

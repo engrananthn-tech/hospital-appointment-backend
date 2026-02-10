@@ -60,7 +60,8 @@ def get_my_appointments(status: schemas.AppointmentFilter | None = Query(None), 
                 "date": date,
                 "start_time": start_time,
                 "end_time": end_time,
-                "patient_id": doctor_name,
+                "patient_name": current_user.user_name,
+                "doctor_name": doctor_name,
                 "status": appt.status
             })
     else:
@@ -82,6 +83,7 @@ def get_my_appointments(status: schemas.AppointmentFilter | None = Query(None), 
                 "start_time": start_time,
                 "end_time": end_time,
                 "patient_name": patient_name,
+                "doctor_name": current_user.user_name,
                 "status": appt.status
             })
     return response
