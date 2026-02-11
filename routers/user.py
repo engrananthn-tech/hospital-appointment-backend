@@ -26,9 +26,3 @@ def get_me(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.ge
     user = db.query(models.User).filter(models.User.user_id == current_user.user_id).first()
     return user
 
-@router.delete("/me")
-def deactivate(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
-    user = db.query(models.User).filter(models.User.user_id == current_user.user_id).first()
-    user.status = "inactive"
-    db.commit()
-    return {"Message" : "Deactivated"}
