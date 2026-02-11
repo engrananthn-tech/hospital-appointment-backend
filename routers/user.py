@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError, DataError
 from database import get_db
 import models, schemas, utils, oauth2
 
-router = APIRouter(prefix= '/users')
+router = APIRouter(prefix= '/users', tags=['Users'])
 
 @router.post("/", response_model= schemas.UserOutput)
 def createuser(user: schemas.User, db:Session = Depends(get_db)):

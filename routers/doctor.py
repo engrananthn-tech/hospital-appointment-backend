@@ -6,7 +6,7 @@ import models, schemas, utils, oauth2
 from typing import List
 from datetime import datetime, timedelta
 
-router = APIRouter(prefix= '/doctors')
+router = APIRouter(prefix= '/doctors',tags=['Doctors'])
 
 @router.post("/me", response_model= schemas.DoctorOwnerOutput)
 def update_info(doctor : schemas.UpdateDoctor, db: Session = Depends(get_db), user: dict = Depends(oauth2.get_current_user)):

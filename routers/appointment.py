@@ -7,7 +7,7 @@ import models, schemas, utils, oauth2
 from datetime import datetime, timedelta
 from typing import List
 
-router = APIRouter(prefix= "/appointments")
+router = APIRouter(prefix= "/appointments", tags=['Appointments'])
 
 @router.post("/", response_model= schemas.AppointmentOutput)
 def post_appointment(slot: schemas.AppointmentInput, db: Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):

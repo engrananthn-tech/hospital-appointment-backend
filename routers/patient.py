@@ -5,7 +5,7 @@ from database import get_db
 import models, schemas, utils, oauth2
 from typing import List
 
-router = APIRouter(prefix= '/patients')
+router = APIRouter(prefix= '/patients', tags=['Patients'])
 
 @router.post("/me", response_model= schemas.PatientOwnerOutput)
 def create_profile(patient : schemas.UpdatePatient, db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):

@@ -7,7 +7,7 @@ import models, schemas, utils, oauth2
 from datetime import timedelta, datetime, timezone
 from typing import List
 
-router = APIRouter(prefix= '/slots')
+router = APIRouter(prefix= '/slots', tags=['Slots'])
 
 
 
