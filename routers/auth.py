@@ -15,12 +15,3 @@ def user_login(credentials: OAuth2PasswordRequestForm = Depends(), db : Session 
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     access_token = oauth2.create_access_token({"user_id":user.user_id, "role": user.role})
     return {"access_token": access_token}
-
-@router.post("/logout")
-def user_login(db : Session = Depends(get_db)):
-    """
-    Stateless JWT logout.
-    Client deletes token.
-    Server-side revocation not implemented.
-    """
-    raise HTTPException(status_code=204)
