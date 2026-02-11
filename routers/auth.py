@@ -18,4 +18,9 @@ def user_login(credentials: OAuth2PasswordRequestForm = Depends(), db : Session 
 
 @router.post("/logout")
 def user_login(db : Session = Depends(get_db)):
+    """
+    Stateless JWT logout.
+    Client deletes token.
+    Server-side revocation not implemented.
+    """
     raise HTTPException(status_code=204)
