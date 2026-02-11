@@ -129,3 +129,6 @@ class AppointmentFilter(str, Enum):
 class SlotsFilter(str, Enum):
     booked =  "booked"
     available = "available"
+
+class UpdateProfileStatus(BaseModel):
+    is_active: bool

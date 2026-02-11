@@ -32,28 +32,39 @@ def get_user(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.g
     else:
         return current_doctor
     
-@router.patch("/me", response_model= schemas.DoctorOwnerOutput)
-def activate(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
-    query = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id)
-    current_doctor = query.first()
-    if not current_doctor:
-        raise HTTPException(status_code=404, detail="doctor not found")
-    if current_doctor.is_active:
-        raise HTTPException(status_code=409, detail="Profile is already active")
-    current_doctor.is_active = True
-    db.commit()
-    return query.first()
+# @router.patch("/me", response_model= schemas.DoctorOwnerOutput)
+# def activate(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
+#     query = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id)
+#     current_doctor = query.first()
+#     if not current_doctor:
+#         raise HTTPException(status_code=404, detail="doctor not found")
+#     if current_doctor.is_active:
+#         raise HTTPException(status_code=409, detail="Profile is already active")
+#     current_doctor.is_active = True
+#     db.commit()
+#     return query.first()
 
-@router.patch("/me")
-def deactivate(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
-    doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
-    appointment = db.query(models.Appointment).join(models.Slot, models.Appointment.slot_id == models.Slot.slot_id).filter(models.Slot.doctor_id == doctor.doctor_id).filter(models.Appointment.status == "booked").first()
-    if appointment:
-        raise HTTPException(status_code=409, detail="Cannot deactivate doctor with active appointments")
-    doctor.is_active = False
+@router.patch("/me", response_model=schemas.DoctorOwnerOutput)
+def update_doctor_status(payload: schemas.UpdateProfileStatus,db: Session = Depends(get_db),current_user=Depends(oauth2.get_current_user)):
+    current_doctor = (db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).one_or_none())
+    if not current_doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    if payload.is_active:
+        if current_doctor.is_active:
+            raise HTTPException(status_code=409, detail="Profile already active")
+        current_doctor.is_active = True
+    else:
+        now = datetime.now()
+        active_appointment = (db.query(models.Appointment).join(models.Slot, models.Appointment.slot_id == models.Slot.slot_id).filter(models.Slot.doctor_id == current_doctor.doctor_id).filter(models.Appointment.status == "booked").filter((models.Slot.date > now.date()) |((models.Slot.date == now.date()) & (models.Slot.start_time > now.time()))).first())
+        if active_appointment:
+            raise HTTPException(status_code=409,detail="Cannot deactivate doctor with upcoming appointments",)
+        if not current_doctor.is_active:
+            raise HTTPException(status_code=409, detail="Profile already inactive")
+        current_doctor.is_active = False
     db.commit()
-    return {"Message" : "Deactivated"}
-    
+    db.refresh(current_doctor)
+    return current_doctor
+
 @router.get("/", response_model= List[schemas.DoctorOutput])
 def get_doctor(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.get_current_user)):
     current_doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
