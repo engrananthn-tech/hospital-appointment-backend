@@ -34,23 +34,12 @@ def get_user(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.g
     else:
         return current_doctor
     
-# @router.patch("/me", response_model= schemas.DoctorOwnerOutput)
-# def activate(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
-#     query = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id)
-#     current_doctor = query.first()
-#     if not current_doctor:
-#         raise HTTPException(status_code=404, detail="doctor not found")
-#     if current_doctor.is_active:
-#         raise HTTPException(status_code=409, detail="Profile is already active")
-#     current_doctor.is_active = True
-#     db.commit()
-#     return query.first()
 
 @router.patch("/me", response_model=schemas.DoctorOwnerOutput)
 def update_doctor_status(payload: schemas.UpdateProfileStatus,db: Session = Depends(get_db),current_user=Depends(oauth2.get_current_user)):
     current_doctor = (db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).one_or_none())
     if not current_doctor:
-        raise HTTPException(status_code=404, detail="Doctor not found")
+        raise HTTPException(status_code=404, detail="Doctor profile not found")
     if payload.is_active:
         if current_doctor.is_active:
             raise HTTPException(status_code=409, detail="Profile already active")
@@ -142,12 +131,12 @@ def update_slot(slot: schemas.SlotsInput, db: Session = Depends(get_db), current
 def get_all_slots(status: schemas.SlotsFilter | None = Query(None), past: bool = Query(True), db : Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
 
     if current_user.role != "doctor":
-        raise HTTPException(status_code=403, detail="Not authorized to check the available slots")
+        raise HTTPException(status_code=403, detail="Not authorized")
     doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
     if not doctor:
          raise HTTPException(status_code=404, detail="Doctor not found")
     if not doctor.is_active:
-         raise HTTPException(status_code=403, detail="Not authorized to check the available slots")
+         raise HTTPException(status_code=403, detail="Doctor profile is inactive")
     query = db.query(models.Slot).filter(models.Slot.doctor_id == doctor.doctor_id)
     now = datetime.now()
     if past:
@@ -166,7 +155,7 @@ def get_all_slots(status: schemas.SlotsFilter | None = Query(None), past: bool =
             slots = query.filter(models.Slot.date > now.date(), models.Slot.time > now.time()).all()
     return slots
 
-@router.delete("/{id}")
+@router.delete("/me/slots/{id}")
 def delete_slot(id:int = id, db : Session = Depends(get_db), current_user : dict = Depends(oauth2.get_current_user)):
     if current_user.role != "doctor":
         raise HTTPException(status_code=403, detail="Not authorized to delete slot")
