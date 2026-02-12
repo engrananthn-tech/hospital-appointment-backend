@@ -24,6 +24,8 @@ def update_info(doctor : schemas.UpdateDoctor, db: Session = Depends(get_db), us
 
 @router.get("/me", response_model= schemas.DoctorOwnerOutput)
 def get_user(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.get_current_user)):
+    if current_user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Not authorized to update doctor information")
     current_doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
     if not current_doctor:
         raise HTTPException(status_code=404, detail="Doctor profile not found")
