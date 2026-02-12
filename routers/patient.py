@@ -49,7 +49,7 @@ def get_user(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.g
 @router.get("/me", response_model= schemas.PatientOwnerOutput)
 def get_patient(db: Session = Depends(get_db), current_user: dict = Depends(oauth2.get_current_user)):
     if current_user.role != "patient":
-        raise HTTPException(status_code=403, detail="Not authorized to update patient information")
+        raise HTTPException(status_code=403, detail="Not authorized to get patient information")
     current_patient = db.query(models.Patient).filter(models.Patient.user_id == current_user.user_id).first()
     if not current_patient:
         raise HTTPException(status_code=404, detail="Patient profile not found")
