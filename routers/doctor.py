@@ -58,23 +58,17 @@ def update_doctor_status(payload: schemas.UpdateProfileStatus,db: Session = Depe
 
 @router.get("/", response_model= List[schemas.DoctorOutput])
 def get_doctor(db: Session = Depends(get_db),current_user: dict = Depends(oauth2.get_current_user)):
-    current_doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
-    doctor = db.query(models.Doctor).all()
-    if not current_doctor.is_active:
-        raise HTTPException(status_code=403, detail="Not authorized to get doctor information")
+    doctor = db.query(models.Doctor).filter(models.Doctor.is_active == True).all()
     if not doctor:
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=404, detail="No doctors found")
     else:
         return doctor
     
 @router.get("/{id}", response_model= schemas.DoctorOutput)
 def get_doctor(id : int,  db: Session = Depends(get_db),current_user: dict = Depends(oauth2.get_current_user)):
-    current_doctor = db.query(models.Doctor).filter(models.Doctor.user_id == current_user.user_id).first()
-    doctor = db.query(models.Doctor).filter(models.Doctor.doctor_id == id).first()
-    if not current_doctor.is_active:
-        raise HTTPException(status_code=403, detail="Not authorized to get doctor information")
+    doctor = db.query(models.Doctor).filter(models.Doctor.doctor_id == id).filter(models.Doctor.is_active == True).one_or_none()
     if not doctor:
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=404, detail="No doctors found")
     else:
         return doctor
 
